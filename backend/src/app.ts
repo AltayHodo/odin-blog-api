@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 import postRoutes from './routes/posts';
 import userRoutes from './routes/users';
+import commentRoutes from './routes/comments';
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use('/posts', postRoutes);
 app.use('/users', userRoutes);
+app.use('/comments', commentRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is working!');
