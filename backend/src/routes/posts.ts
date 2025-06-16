@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
   if (!title || !content || !authorId) {
     res
       .status(400)
-      .json({ error: 'Missing required fields: title, content, or authorId' });
+      .json({ error: 'Missing required fields' });
     return;
   }
   try {
@@ -51,7 +51,6 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  console.log(req.body)
   const { title, content, authorId, published = false } = req.body;
 
   if (!title || !content || !authorId) {
@@ -60,7 +59,7 @@ router.put('/:id', async (req, res) => {
   }
 
   try {
-    const post = await prisma.post.update({
+    const updatedPost = await prisma.post.update({
       where: { id: req.params.id },
       data: {
         title,
@@ -69,7 +68,7 @@ router.put('/:id', async (req, res) => {
         published,
       },
     });
-    res.json(post);
+    res.json(updatedPost);
   } catch (error) {
     console.error(error);
     res.json({ error: 'Post not found or update failed' });
@@ -83,7 +82,7 @@ router.delete('/:id', async (req, res) => {
         id: req.params.id,
       },
     });
-    res.status(200).json({ message: 'User deleted', user: deletedPost });
+    res.status(200).json({ message: 'Post deleted', post: deletedPost });
   } catch (error) {
     console.error(error);
   }
