@@ -1,4 +1,3 @@
-// set up postgres database, update .env
 generator client {
   provider = "prisma-client-js"
 }
@@ -29,7 +28,7 @@ model Post {
   updatedAt DateTime @updatedAt
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId String
-  comments Comment[]
+  comments Comment[] 
 
   @@map("post")
 }

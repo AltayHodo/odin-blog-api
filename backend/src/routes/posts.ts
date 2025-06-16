@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 
 const router = Router();
-const posts = ['post 1', 'post 2'];
 
 router.get('/', async (req, res) => {
   const posts = await prisma.post.findMany({
@@ -20,9 +19,74 @@ router.get('/:id', async (req, res) => {
   const post = await prisma.post.findUnique({
     where: { id: req.params.id },
   });
+  if (!post) {
+    res.status(404).json({ error: 'Post not found' });
+    return;
+  }
   res.json(post);
 });
 
-// add other crud actions
+router.post('/', async (req, res) => {
+  const { title, content, authorId, published = false } = req.body;
+
+  if (!title || !content || !authorId) {
+    res
+      .status(400)
+      .json({ error: 'Missing required fields: title, content, or authorId' });
+    return;
+  }
+  try {
+    const newPost = await prisma.post.create({
+      data: {
+        title,
+        content,
+        authorId,
+        published,
+      },
+    });
+    res.json(newPost);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  console.log(req.body)
+  const { title, content, authorId, published = false } = req.body;
+
+  if (!title || !content || !authorId) {
+    res.status(400).json({ error: 'Missing required fields' });
+    return;
+  }
+
+  try {
+    const post = await prisma.post.update({
+      where: { id: req.params.id },
+      data: {
+        title,
+        content,
+        authorId,
+        published,
+      },
+    });
+    res.json(post);
+  } catch (error) {
+    console.error(error);
+    res.json({ error: 'Post not found or update failed' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const deletedPost = await prisma.post.delete({
+      where: {
+        id: req.params.id,
+      },
+    });
+    res.status(200).json({ message: 'User deleted', user: deletedPost });
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 export default router;
