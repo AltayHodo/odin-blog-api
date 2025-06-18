@@ -22,9 +22,24 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 
   if (!payload) {
     res.status(401).json({ error: 'Invalid token' });
-    return
+    return;
   }
 
-  req.user = payload
+  req.user = payload;
   next();
+}
+
+export function authorize(roles: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      res.status(403).json({ error: 'Authentication Required' });
+      return;
+    }
+
+    if (!roles.includes(req.user.role)) {
+      res.status(403).json({ error: 'Insufficient permissions' });
+      return;
+    }
+    next();
+  };
 }

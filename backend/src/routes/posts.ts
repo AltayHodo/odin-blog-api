@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
+import { authenticate, authorize } from '../middleware/auth';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.get('/:id', async (req, res) => {
   res.json(post);
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, authorize(['author']), async (req, res) => {
   const { title, content, authorId, published = false } = req.body;
 
   if (!title || !content || !authorId) {
@@ -50,7 +51,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, authorize(['author']), async (req, res) => {
   const { title, content, authorId, published = false } = req.body;
 
   if (!title || !content || !authorId) {
@@ -75,7 +76,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, authorize(['author']), async (req, res) => {
   try {
     const deletedPost = await prisma.post.delete({
       where: {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcrypt';
-import { hash } from 'crypto';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
@@ -21,36 +21,44 @@ router.get('/:id', async (req, res) => {
   res.json(user);
 });
 
-router.post('/', async (req, res) => {
-  const { username, email, passwordHash, role = 'viewer' } = req.body;
-  if (!username || !email || !passwordHash) {
-    res.status(400).json({ error: 'Missing required fields' });
+// router.post('/', async (req, res) => {
+//   const { username, email, passwordHash, role = 'viewer' } = req.body;
+//   if (!username || !email || !passwordHash) {
+//     res.status(400).json({ error: 'Missing required fields' });
+//     return;
+//   }
+//   try {
+//     const hashedPassword = await bcrypt.hash(passwordHash, 10);
+
+//     const newUser = await prisma.user.create({
+//       data: {
+//         username,
+//         email,
+//         passwordHash: hashedPassword,
+//         role,
+//       },
+//       select: {
+//         id: true,
+//         username: true,
+//         email: true,
+//         role: true,
+//       },
+//     });
+//     res.status(201).json(newUser);
+//   } catch (error) {
+//     console.error(error);
+//   }
+// });
+
+router.put('/:id', authenticate, async (req, res) => {
+  if (
+    !req.user ||
+    (req.params.id !== req.user.userId && req.user.role !== 'author')
+  ) {
+    res.status(403).json({ error: 'Unauthorized to update this user' });
     return;
   }
-  try {
-    const hashedPassword = await bcrypt.hash(passwordHash, 10);
 
-    const newUser = await prisma.user.create({
-      data: {
-        username,
-        email,
-        passwordHash: hashedPassword,
-        role,
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        role: true,
-      },
-    });
-    res.status(201).json(newUser);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-router.put('/:id', async (req, res) => {
   const { username, email, passwordHash } = req.body;
   if (!username || !email || !passwordHash) {
     res.status(400).json({ error: 'Missing required fields' });
@@ -82,15 +90,24 @@ router.put('/:id', async (req, res) => {
         id: true,
         username: true,
         email: true,
+        role: true,
       },
     });
     res.json(updatedUser);
   } catch (error) {
     console.error(error);
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
+  if (
+    !req.user ||
+    (req.params.id !== req.user.userId && req.user.role !== 'author')
+  ) {
+    res.status(403).json({ error: 'Unauthorized to delete this user' });
+    return;
+  }
   try {
     const deletedUser = await prisma.user.delete({
       where: {
