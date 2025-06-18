@@ -1,11 +1,18 @@
 import { prisma } from './lib/prisma';
+import bcrypt from 'bcrypt';
 
 async function main() {
+  await prisma.comment.deleteMany();
+  await prisma.post.deleteMany();
+  await prisma.user.deleteMany();
+
+  const SALT_ROUNDS = 10;
+
   const author = await prisma.user.create({
     data: {
       username: 'altayhodo (author)',
       email: 'altay.hodo@gmail.com',
-      passwordHash: 'password',
+      passwordHash: await bcrypt.hash('password', SALT_ROUNDS),
       role: 'author',
     },
   });
@@ -14,7 +21,7 @@ async function main() {
     data: {
       username: 'user1',
       email: 'user1@gmail.com',
-      passwordHash: 'password',
+      passwordHash: await bcrypt.hash('password', SALT_ROUNDS),
       role: 'viewer',
     },
   });
@@ -23,7 +30,7 @@ async function main() {
     data: {
       username: 'user2',
       email: 'user2@gmail.com',
-      passwordHash: 'password',
+      passwordHash: await bcrypt.hash('password', SALT_ROUNDS),
       role: 'viewer',
     },
   });
