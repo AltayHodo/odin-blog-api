@@ -5,35 +5,122 @@ import { authenticate, authorize } from '../middleware/auth';
 const router = Router();
 
 router.get('/', async (req, res) => {
-  const posts = await prisma.post.findMany({
-    where: {
-      published: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
-  res.json(posts);
+  try {
+    const posts = await prisma.post.findMany({
+      where: {
+        published: true,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    const formattedPosts = posts.map((post) => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      authorId: post.authorId,
+      authorName: post.author?.username || 'Unknown Author',
+      createdAt: post.createdAt,
+      published: post.published,
+    }));
+
+    res.json(formattedPosts);
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    res.status(500).json({ error: 'Failed to fetch posts' });
+  }
 });
 
 router.get('/:id', async (req, res) => {
-  const post = await prisma.post.findUnique({
-    where: { id: req.params.id },
-  });
-  if (!post) {
-    res.status(404).json({ error: 'Post not found' });
-    return;
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: req.params.id },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!post) {
+      res.status(404).json({ error: 'Post not found' });
+      return;
+    }
+
+    const formattedPost = {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      authorId: post.authorId,
+      authorName: post.author?.username || 'Unknown Author',
+      createdAt: post.createdAt,
+      published: post.published,
+    };
+
+    res.json(formattedPost);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    res.status(500).json({ error: 'Failed to fetch post' });
   }
-  res.json(post);
+});
+
+router.get('/:id/comments', async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      res.status(404).json({ error: 'Post not found' });
+      return;
+    }
+
+    const comments = await prisma.comment.findMany({
+      where: { postId },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    const formattedComments = comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      authorId: comment.authorId,
+      authorName: comment.author?.username || 'Unknown User',
+      postId: comment.postId,
+      createdAt: comment.createdAt,
+    }));
+
+    res.json(formattedComments);
+  } catch (error) {
+    console.error('Error fetching comments for post:', error);
+    res.status(500).json({ error: 'Failed to fetch comments for post' });
+  }
 });
 
 router.post('/', authenticate, authorize(['author']), async (req, res) => {
   const { title, content, authorId, published = false } = req.body;
 
   if (!title || !content || !authorId) {
-    res
-      .status(400)
-      .json({ error: 'Missing required fields' });
+    res.status(400).json({ error: 'Missing required fields' });
     return;
   }
   try {
