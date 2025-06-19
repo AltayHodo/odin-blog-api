@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from '../styles/AuthForm.module.css';
@@ -11,10 +11,11 @@ function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  if (user) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +24,6 @@ function LoginPage() {
 
     try {
       await login(email, password);
-      navigate('/');
     } catch (error: any) {
       setError(error.message || 'Login failed');
     } finally {

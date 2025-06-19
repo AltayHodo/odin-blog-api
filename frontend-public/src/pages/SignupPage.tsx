@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from '../styles/AuthForm.module.css';
@@ -12,11 +12,11 @@ function SignupPage() {
   const { signup, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
-  if (user) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +25,6 @@ function SignupPage() {
 
     try {
       await signup(username, email, password);
-      navigate('/'); // Redirect to home page on successful signup
     } catch (error: any) {
       setError(error.message || 'Signup failed');
     } finally {
@@ -68,7 +67,11 @@ function SignupPage() {
             required
           />
         </div>
-        <button type="submit" disabled={isSubmitting} className={styles.submitButton}>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={styles.submitButton}
+        >
           {isSubmitting ? 'Creating Account...' : 'Sign Up'}
         </button>
       </form>
