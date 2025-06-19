@@ -116,25 +116,57 @@ router.get('/:id/comments', async (req, res) => {
   }
 });
 
-router.post('/', authenticate, authorize(['author']), async (req, res) => {
-  const { title, content, authorId, published = false } = req.body;
+router.post('/:id/comments', authenticate, async (req, res) => {
+  const { content } = req.body;
+  const postId = req.params.id;
 
-  if (!title || !content || !authorId) {
-    res.status(400).json({ error: 'Missing required fields' });
+  if (!content) {
+    res.status(400).json({ error: 'Content is required' });
     return;
   }
+
   try {
-    const newPost = await prisma.post.create({
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      res.status(404).json({ error: 'Post not found' });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const newComment = await prisma.comment.create({
       data: {
-        title,
         content,
-        authorId,
-        published,
+        postId,
+        authorId: req.user.userId,
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
-    res.json(newPost);
+
+    const formattedComment = {
+      id: newComment.id,
+      content: newComment.content,
+      authorId: newComment.authorId,
+      authorName: newComment.author?.username || 'Unknown User',
+      postId: newComment.postId,
+      createdAt: newComment.createdAt,
+    };
+    res.status(201).json(formattedComment);
   } catch (error) {
-    console.error(error);
+    res.status(500).json({ error: 'error' });
+    return;
   }
 });
 

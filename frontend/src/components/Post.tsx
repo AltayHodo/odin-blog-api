@@ -44,7 +44,6 @@ const Post = ({
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
         const response = await fetch(`${apiUrl}/posts/${id}/comments`);
         const data = await response.json();
-        console.log('Fetched comments:', data);
         setComments(data);
       } catch (error) {
         console.error('Error fetching comments:', error);
@@ -68,7 +67,7 @@ const Post = ({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({ postId: id, content }),
+        body: JSON.stringify({ content }),
       });
 
       const newComment = await response.json();
