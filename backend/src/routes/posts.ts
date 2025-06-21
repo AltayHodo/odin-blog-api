@@ -116,6 +116,54 @@ router.get('/:id/comments', async (req, res) => {
   }
 });
 
+// make .post route to create a post, authorize
+router.post('/', authenticate, authorize(['author']), async (req, res) => {
+  const { title, content } = req.body;
+  if (!content || !title) {
+    res.status(400).json({ error: 'Missing Fields' });
+    return
+  }
+
+  try {
+    const authorId = req.user?.userId;
+    if (!authorId) {
+      res.status(400).json({ error: 'Author ID is required' });
+      return;
+    }
+    const newPost = await prisma.post.create({
+      data: {
+        title,
+        content,
+        authorId,
+        published: true,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true
+          }
+        }
+      }
+    })
+
+    const formattedPost = {
+      id: newPost.id,
+      title: newPost.title,
+      content: newPost.content,
+      authorId: newPost.authorId,
+      authorName: newPost.author?.username,
+      createdAt: newPost.createdAt,
+      published: newPost.published,
+    }
+
+    res.status(201).json(formattedPost)
+  } catch (error) {
+    console.error('Error creating post', error)
+    res.status(500).json({ error: 'Failed to create post'})
+  }
+});
+
 router.post('/:id/comments', authenticate, async (req, res) => {
   const { content } = req.body;
   const postId = req.params.id;

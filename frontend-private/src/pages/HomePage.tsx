@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import Post from '../components/Post';
+import CreatePostForm from '../components/CreatePostForm';
+import { useAuth } from '../context/AuthContext';
 import styles from '../styles/HomePage.module.css';
 
 interface PostType {
@@ -15,6 +17,8 @@ function HomePage() {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -44,7 +48,16 @@ function HomePage() {
     setPosts(posts.filter((post) => post.id !== postId));
   };
 
-  if (loading) {
+  const handlePostCreated = (newPost: PostType) => {
+    setPosts([newPost, ...posts]);
+    setIsCreatingPost(false);
+  };
+
+  const toggleCreateForm = () => {
+    setIsCreatingPost(!isCreatingPost);
+  };
+
+  if (loading && posts.length === 0) {
     return <div className={styles.loadingContainer}>Loading posts...</div>;
   }
 
@@ -54,10 +67,24 @@ function HomePage() {
 
   return (
     <div className={styles.homePage}>
-      <h1 className={styles.pageTitle}>Latest Posts</h1>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>Author Dashboard</h1>
+        <button className={styles.createButton} onClick={toggleCreateForm}>
+          {isCreatingPost ? 'Cancel' : 'Create New Post'}
+        </button>
+      </div>
+
+      {isCreatingPost && (
+        <CreatePostForm
+          onPostCreated={handlePostCreated}
+          onCancel={() => setIsCreatingPost(false)}
+        />
+      )}
 
       {posts.length === 0 ? (
-        <p className={styles.noPosts}>No posts available at the moment.</p>
+        <p className={styles.noPosts}>
+          No posts available. Create your first post!
+        </p>
       ) : (
         <div className={styles.postsGrid}>
           {posts.map((post) => (
